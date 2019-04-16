@@ -5,6 +5,7 @@
  */
 
 import * as express from "express";
+
 import { isLeft } from "fp-ts/lib/Either";
 import {
   IResponseErrorInternal,
@@ -32,6 +33,9 @@ import { log } from "../utils/logger";
 import { clientProfileRedirectionUrl } from "../config";
 import { SuccessResponse } from "../types/success_response";
 
+import { TypeofApiCall } from "italia-ts-commons/lib/requests";
+import { UserWebhookT } from "../utils/webhooks";
+
 const getClientProfileRedirectionUrl = (token: string): UrlFromString => {
   const url = clientProfileRedirectionUrl.replace("{token}", token);
   return {
@@ -44,7 +48,9 @@ export default class AuthenticationController {
     private readonly sessionStorage: ISessionStorage,
     private readonly samlCert: string,
     private readonly spidStrategy: SpidStrategy,
-    private readonly tokenService: TokenService
+    private readonly tokenService: TokenService,
+    private readonly webhookPath: string,
+    private readonly userWebhookRequest: TypeofApiCall<UserWebhookT>
   ) {}
 
   /**
@@ -70,7 +76,20 @@ export default class AuthenticationController {
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
     const user = toAppUser(spidUser, sessionToken);
 
-    const errorOrResponse = await this.sessionStorage.set(user);
+    const webhookResponse = await this.userWebhookRequest({
+      user,
+      webhookPath: this.webhookPath
+    });
+
+    if (!webhookResponse || webhookResponse.status !== 200) {
+      log.error("Error calling webhook: %s", JSON.stringify(webhookResponse));
+      return ResponseErrorInternal("Error calling webhook.");
+    }
+
+    const errorOrResponse = await this.sessionStorage.set({
+      ...user,
+      metadata: webhookResponse.value
+    });
 
     if (isLeft(errorOrResponse)) {
       const error = errorOrResponse.value;
@@ -87,6 +106,7 @@ export default class AuthenticationController {
 
     return ResponsePermanentRedirect(urlWithToken);
   }
+
   /**
    * Retrieves the logout url from the IDP.
    */

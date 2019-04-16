@@ -19,7 +19,6 @@ import { Issuer } from "./issuer";
 import { isSpidL } from "./spidLevel";
 import { SessionToken } from "./token";
 
-// required attributes
 export const User = t.intersection([
   t.interface({
     created_at: t.number,
@@ -32,6 +31,7 @@ export const User = t.intersection([
     spid_mobile_phone: NonEmptyString
   }),
   t.partial({
+    metadata: t.record(t.string, t.string),
     nameID: t.string,
     nameIDFormat: t.string,
     sessionIndex: t.string,

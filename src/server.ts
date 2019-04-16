@@ -11,9 +11,12 @@ import * as t from "io-ts";
 import * as morgan from "morgan";
 import * as passport from "passport";
 
+import nodeFetch from "node-fetch";
+
 import expressEnforcesSsl = require("express-enforces-ssl");
 import { NodeEnvironmentEnum } from "italia-ts-commons/lib/environment";
 import { toExpressHandler } from "italia-ts-commons/lib/express";
+import { createFetchRequestForApi } from "italia-ts-commons/lib/requests";
 import {
   API_BASE_PATH,
   AUTHENTICATION_BASE_PATH,
@@ -29,7 +32,9 @@ import {
   SERVER_PORT,
   SPID_AUTOLOGIN,
   SPID_TESTENV_URL,
-  TOKEN_DURATION_IN_SECONDS
+  TOKEN_DURATION_IN_SECONDS,
+  WEBHOOK_USER_LOGIN_BASE_URL,
+  WEBHOOK_USER_LOGIN_PATH
 } from "./config";
 import AuthenticationController from "./controllers/authentication";
 import ProfileController from "./controllers/profile";
@@ -41,6 +46,7 @@ import makeSpidStrategy from "./strategies/spid_strategy";
 import { log } from "./utils/logger";
 import { createSimpleRedisClient, DEFAULT_REDIS_PORT } from "./utils/redis";
 import { withSpidAuth } from "./utils/spid_auth";
+import { userWebhook } from "./utils/webhooks";
 
 const port = SERVER_PORT;
 const env = NODE_ENVIRONMENT;
@@ -83,11 +89,19 @@ const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 //
 const tokenService = new TokenService();
 
+const userWebhookRequest = createFetchRequestForApi(userWebhook, {
+  baseUrl: WEBHOOK_USER_LOGIN_BASE_URL,
+  // tslint:disable-next-line: no-any
+  fetchApi: (nodeFetch as any) as typeof fetch
+});
+
 const acsController = new AuthenticationController(
   sessionStorage,
   SAML_CERT,
   spidStrategy,
-  tokenService
+  tokenService,
+  WEBHOOK_USER_LOGIN_PATH,
+  userWebhookRequest
 );
 
 const sessionController = new SessionController();

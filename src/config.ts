@@ -83,7 +83,16 @@ export const TOKEN_DURATION_IN_SECONDS = process.env.TOKEN_DURATION_IN_SECONDS
   : DEFAULT_TOKEN_DURATION_IN_SECONDS;
 log.info("Session token duration set to %s seconds", TOKEN_DURATION_IN_SECONDS);
 
+const DEFAULT_JWT_EXPIRES_IN = "30 days";
+export const JWT_EXPIRES_IN =
+  process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN;
+
 export const AUTHENTICATION_BASE_PATH =
   process.env.AUTHENTICATION_BASE_PATH || "";
 
 export const API_BASE_PATH = process.env.API_BASE_PATH || "/api/v1";
+
+export const ADMIN_UID = 1;
+
+export const WEBHOOK_USER_LOGIN_PATH = "/webhook/user";
+export const WEBHOOK_USER_LOGIN_BASE_URL = "http://localhost";
