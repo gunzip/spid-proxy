@@ -139,7 +139,7 @@ passport.use(spidStrategy);
 const app = express();
 
 // Redirect unsecure connections.
-if (env !== NodeEnvironmentEnum.DEVELOPMENT) {
+if (env === NodeEnvironmentEnum.DEVELOPMENT) {
   // Trust proxy uses proxy X-Forwarded-Proto for ssl.
   app.enable("trust proxy");
   app.use(/\/((?!ping).)*/, expressEnforcesSsl());

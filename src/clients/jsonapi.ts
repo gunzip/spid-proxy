@@ -84,9 +84,10 @@ export function JsonapiClient(
   };
 
   const getUser: GetUserT = {
-    headers: () => ({
+    headers: params => ({
       // tslint:disable-next-line: no-duplicate-string
-      Accept: "application/vnd.api+json"
+      Accept: "application/vnd.api+json",
+      Authorization: "Bearer " + params.jwt
     }),
     method: "get",
     query: params => ({
@@ -98,8 +99,9 @@ export function JsonapiClient(
 
   const createUser: CreateUserT = {
     body: params => JSON.stringify(params.drupalUser),
-    headers: () => ({
+    headers: params => ({
       Accept: "application/vnd.api+json",
+      Authorization: "Bearer " + params.jwt,
       "Content-Type": "application/vnd.api+json"
     }),
     method: "post",
