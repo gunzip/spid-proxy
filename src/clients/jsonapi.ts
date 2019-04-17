@@ -84,7 +84,10 @@ export function JsonapiClient(
   };
 
   const getUser: GetUserT = {
-    headers: ApiHeaderJson,
+    headers: () => ({
+      // tslint:disable-next-line: no-duplicate-string
+      Accept: "application/vnd.api+json"
+    }),
     method: "get",
     query: params => ({
       "filter[name]": params.username
@@ -95,7 +98,10 @@ export function JsonapiClient(
 
   const createUser: CreateUserT = {
     body: params => JSON.stringify(params.drupalUser),
-    headers: ApiHeaderJson,
+    headers: () => ({
+      Accept: "application/vnd.api+json",
+      "Content-Type": "application/vnd.api+json"
+    }),
     method: "post",
     query: () => ({}),
     response_decoder: basicResponseDecoder(GetUserResponseT),

@@ -42,10 +42,12 @@ spec:
           value: "redis-master.default.svc.cluster.local"
         - name: "REDIS_PORT"
           value: "6379"
+        - name: "WEBHOOK_USER_LOGIN_BASE_URL"
+          value: "http://backend.default.svc.cluster.local"
         - name: "USER_ROLE_ID"
           value: "31438e54-87fb-469c-acc0-21480e59a22a"
         - name: "JSONAPI_BASE_URL"
-          value: "https://drupal.danilospinelli.com"
+          value: "https://drupal.danilospinelli.com/jsonapi"
         - name: "JWT_SECRET"
           valueFrom:
             secretKeyRef:
