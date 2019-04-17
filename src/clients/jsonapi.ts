@@ -5,6 +5,7 @@ import {
   BasicResponseType,
   createFetchRequestForApi,
   IGetApiRequestType,
+  IPostApiRequestType,
   TypeofApiCall
 } from "italia-ts-commons/lib/requests";
 
@@ -14,6 +15,27 @@ import {
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
 import nodeFetch from "node-fetch";
+
+const CreateUserRequestT = t.interface({
+  data: t.interface({
+    attributes: t.interface({
+      mail: EmailString,
+      name: FiscalCode
+    }),
+    relationships: t.interface({
+      roles: t.interface({
+        data: t.array(
+          t.interface({
+            id: NonEmptyString,
+            type: t.literal("user_role--user_role")
+          })
+        )
+      })
+    }),
+    type: t.literal("user--user")
+  })
+});
+type CreateUserRequestT = t.TypeOf<typeof CreateUserRequestT>;
 
 const GetUserResponseT = t.interface({
   data: t.array(
@@ -38,12 +60,23 @@ type GetUserT = IGetApiRequestType<
   BasicResponseType<GetUserResponseT>
 >;
 
+type CreateUserT = IPostApiRequestType<
+  {
+    readonly drupalUser: CreateUserRequestT;
+    readonly jwt: string;
+  },
+  never,
+  never,
+  BasicResponseType<GetUserResponseT>
+>;
+
 export function JsonapiClient(
   baseUrl?: string,
   // tslint:disable-next-line:no-any
   fetchApi: typeof fetch = (nodeFetch as any) as typeof fetch
 ): {
   readonly getUser: TypeofApiCall<GetUserT>;
+  readonly createUser: TypeofApiCall<CreateUserT>;
 } {
   const options = {
     baseUrl,
@@ -60,7 +93,17 @@ export function JsonapiClient(
     url: () => `/user/user`
   };
 
+  const createUser: CreateUserT = {
+    body: params => JSON.stringify(params.drupalUser),
+    headers: ApiHeaderJson,
+    method: "post",
+    query: () => ({}),
+    response_decoder: basicResponseDecoder(GetUserResponseT),
+    url: () => `/user/user`
+  };
+
   return {
+    createUser: createFetchRequestForApi(createUser, options),
     getUser: createFetchRequestForApi(getUser, options)
   };
 }

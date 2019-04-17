@@ -92,7 +92,13 @@ export const AUTHENTICATION_BASE_PATH =
 
 export const API_BASE_PATH = process.env.API_BASE_PATH || "/api/v1";
 
-export const ADMIN_UID = 1;
-
 export const WEBHOOK_USER_LOGIN_PATH = "/webhook/user";
 export const WEBHOOK_USER_LOGIN_BASE_URL = "http://localhost";
+
+export const ADMIN_UID = 1;
+export const DEFAULT_USER_ROLE_ID = "";
+export const USER_ROLE_ID = process.env.USER_ROLE_ID || DEFAULT_USER_ROLE_ID;
+
+export const JWT_SECRET = process.env.JWT_SECRET || "";
+
+export const JSONAPI_BASE_URL = process.env.JSONAPI_BASE_URL || "";

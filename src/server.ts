@@ -17,11 +17,16 @@ import expressEnforcesSsl = require("express-enforces-ssl");
 import { NodeEnvironmentEnum } from "italia-ts-commons/lib/environment";
 import { toExpressHandler } from "italia-ts-commons/lib/express";
 import { createFetchRequestForApi } from "italia-ts-commons/lib/requests";
+import { JsonapiClient } from "./clients/jsonapi";
 import {
+  ADMIN_UID,
   API_BASE_PATH,
   AUTHENTICATION_BASE_PATH,
   CLIENT_ERROR_REDIRECTION_URL,
   CLIENT_REDIRECTION_URL,
+  JSONAPI_BASE_URL,
+  JWT_EXPIRES_IN,
+  JWT_SECRET,
   NODE_ENVIRONMENT,
   SAML_ACCEPTED_CLOCK_SKEW_MS,
   SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
@@ -33,12 +38,15 @@ import {
   SPID_AUTOLOGIN,
   SPID_TESTENV_URL,
   TOKEN_DURATION_IN_SECONDS,
+  USER_ROLE_ID,
   WEBHOOK_USER_LOGIN_BASE_URL,
   WEBHOOK_USER_LOGIN_PATH
 } from "./config";
 import AuthenticationController from "./controllers/authentication";
 import ProfileController from "./controllers/profile";
 import SessionController from "./controllers/session";
+import WebhookController from "./controllers/webhooks";
+import JwtService from "./services/jwt";
 import RedisSessionStorage from "./services/redis_session_storage";
 import TokenService from "./services/token";
 import bearerTokenStrategy from "./strategies/bearer_token";
@@ -107,6 +115,17 @@ const acsController = new AuthenticationController(
 const sessionController = new SessionController();
 
 const profileController = new ProfileController();
+
+const jwtService = new JwtService(JWT_SECRET, JWT_EXPIRES_IN);
+
+const jsonApiClient = JsonapiClient(JSONAPI_BASE_URL);
+
+const webhookController = new WebhookController(
+  jwtService,
+  jsonApiClient,
+  ADMIN_UID,
+  USER_ROLE_ID
+);
 
 // Setup Passport.
 
@@ -196,7 +215,18 @@ app.get(
   `${API_BASE_PATH}/profile`,
   bearerTokenAuth,
   (req: express.Request, res: express.Response) => {
-    toExpressHandler(profileController.getProfile)(req, res, sessionController);
+    toExpressHandler(profileController.getProfile)(req, res, profileController);
+  }
+);
+
+app.post(
+  WEBHOOK_USER_LOGIN_PATH,
+  (req: express.Request, res: express.Response) => {
+    toExpressHandler(webhookController.getUserMetadata)(
+      req,
+      res,
+      webhookController
+    );
   }
 );
 
