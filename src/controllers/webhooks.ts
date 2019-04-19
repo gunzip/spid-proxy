@@ -41,8 +41,6 @@ export default class WebhookController {
     // Get admin JWT
     const jwt = this.jwtService.getJwtForUid(this.adminUid);
 
-    log.info("Generated JWT");
-
     // Get Drupal user uid if exists
     const getUserResponse = await this.jsonApiClient.getUser({
       jwt,

@@ -69,6 +69,12 @@ type CreateUserT = IPostApiRequestType<
   BasicResponseType<GetUserResponseT>
 >;
 
+const jsonApiHeaders = (jwt: string) => ({
+  Accept: "application/vnd.api+json",
+  Authorization: `Bearer ${jwt}`,
+  "Content-Type": "application/vnd.api+json"
+});
+
 export function JsonapiClient(
   baseUrl?: string,
   // tslint:disable-next-line:no-any
@@ -83,12 +89,7 @@ export function JsonapiClient(
   };
 
   const getUser: GetUserT = {
-    headers: params => ({
-      // tslint:disable-next-line: no-duplicate-string
-      Accept: "application/vnd.api+json",
-      Authorization: `Bearer ${params.jwt}`,
-      "Content-Type": "application/vnd.api+json"
-    }),
+    headers: params => jsonApiHeaders(params.jwt),
     method: "get",
     query: params => ({
       "filter[name]": params.username
@@ -99,11 +100,7 @@ export function JsonapiClient(
 
   const createUser: CreateUserT = {
     body: params => JSON.stringify(params.drupalUser),
-    headers: params => ({
-      Accept: "application/vnd.api+json",
-      Authorization: `Bearer ${params.jwt}`,
-      "Content-Type": "application/vnd.api+json"
-    }),
+    headers: params => jsonApiHeaders(params.jwt),
     method: "post",
     query: () => ({}),
     response_decoder: basicResponseDecoder(GetUserResponseT),
