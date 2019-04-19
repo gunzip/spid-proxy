@@ -42,32 +42,35 @@ export default class WebhookController {
     const jwt = this.jwtService.getJwtForUid(this.adminUid);
 
     // Get Drupal user uid if exists
-    const getUserResponse = await this.jsonApiClient.getUser({
+    const errorOrGetUserResponse = await this.jsonApiClient.getUser({
       jwt,
       username: user.fiscal_code
     });
 
     log.info(
       "**** User response from jsonapi (%s)",
-      JSON.stringify(getUserResponse)
+      JSON.stringify(errorOrGetUserResponse)
     );
 
-    if (!getUserResponse || getUserResponse.status !== 200) {
+    if (
+      isLeft(errorOrGetUserResponse) ||
+      errorOrGetUserResponse.value.status !== 200
+    ) {
       log.error(
         "Cannot get user from json api: %s",
-        JSON.stringify(getUserResponse)
+        JSON.stringify(errorOrGetUserResponse.value)
       );
       return ResponseErrorInternal("Cannot get user from json api.");
     }
 
-    const isExistingUser = !isEmpty(getUserResponse.value.data);
+    const isExistingUser = !isEmpty(errorOrGetUserResponse.value.value.data);
 
     if (!isExistingUser) {
       log.debug("Creating new user %s", user.fiscal_code);
     }
 
     // Create Drupal user if not exists
-    const userResponse = !isExistingUser
+    const errorOrUserResponse = !isExistingUser
       ? await this.jsonApiClient.createUser({
           drupalUser: {
             data: {
@@ -91,17 +94,20 @@ export default class WebhookController {
           },
           jwt
         })
-      : getUserResponse;
+      : errorOrGetUserResponse;
 
-    if (!userResponse || userResponse.status !== 200) {
+    if (
+      isLeft(errorOrUserResponse) ||
+      errorOrUserResponse.value.status !== 200
+    ) {
       log.error(
         "Cannot post user to json api: %s",
-        JSON.stringify(userResponse)
+        JSON.stringify(errorOrUserResponse.value)
       );
       return ResponseErrorInternal("Cannot post user to json api.");
     }
 
-    const uid = userResponse.value.data[0].attributes.drupal_internal__uid.toString();
+    const uid = errorOrUserResponse.value.value.data[0].attributes.drupal_internal__uid.toString();
 
     return ResponseSuccessJson({
       uid

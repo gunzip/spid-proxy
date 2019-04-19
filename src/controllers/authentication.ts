@@ -78,15 +78,22 @@ export default class AuthenticationController {
 
     log.info("Posting user (%s) to webhook", JSON.stringify(user));
 
-    const webhookResponse = await this.userWebhookRequest({
+    const errorOrWebhookResponse = await this.userWebhookRequest({
       user,
       webhookPath: this.webhookPath
     });
 
-    if (!webhookResponse || webhookResponse.status !== 200) {
-      log.error("Error calling webhook: %s", JSON.stringify(webhookResponse));
+    if (
+      isLeft(errorOrWebhookResponse) ||
+      errorOrWebhookResponse.value.status !== 200
+    ) {
+      log.error(
+        "Error calling webhook: %s",
+        JSON.stringify(errorOrWebhookResponse.value)
+      );
       return ResponseErrorInternal("Error calling webhook.");
     }
+    const webhookResponse = errorOrWebhookResponse.value;
 
     const errorOrResponse = await this.sessionStorage.set({
       ...user,
