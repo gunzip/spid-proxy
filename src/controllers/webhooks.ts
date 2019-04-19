@@ -41,11 +41,18 @@ export default class WebhookController {
     // Get admin JWT
     const jwt = this.jwtService.getJwtForUid(this.adminUid);
 
+    log.info("Generated JWT");
+
     // Get Drupal user uid if exists
     const getUserResponse = await this.jsonApiClient.getUser({
       jwt,
       username: user.fiscal_code
     });
+
+    log.info(
+      "**** User response from jsonapi (%s)",
+      JSON.stringify(getUserResponse)
+    );
 
     if (!getUserResponse || getUserResponse.status !== 200) {
       log.error(

@@ -1,6 +1,5 @@
 import * as t from "io-ts";
 import {
-  ApiHeaderJson,
   basicResponseDecoder,
   BasicResponseType,
   createFetchRequestForApi,
@@ -87,7 +86,8 @@ export function JsonapiClient(
     headers: params => ({
       // tslint:disable-next-line: no-duplicate-string
       Accept: "application/vnd.api+json",
-      Authorization: "Bearer " + params.jwt
+      Authorization: `Bearer ${params.jwt}`,
+      "Content-Type": "application/vnd.api+json"
     }),
     method: "get",
     query: params => ({
@@ -101,7 +101,7 @@ export function JsonapiClient(
     body: params => JSON.stringify(params.drupalUser),
     headers: params => ({
       Accept: "application/vnd.api+json",
-      Authorization: "Bearer " + params.jwt,
+      Authorization: `Bearer ${params.jwt}`,
       "Content-Type": "application/vnd.api+json"
     }),
     method: "post",

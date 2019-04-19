@@ -76,6 +76,8 @@ export default class AuthenticationController {
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
     const user = toAppUser(spidUser, sessionToken);
 
+    log.info("Posting user (%s) to webhook", JSON.stringify(user));
+
     const webhookResponse = await this.userWebhookRequest({
       user,
       webhookPath: this.webhookPath
