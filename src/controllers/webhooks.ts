@@ -100,7 +100,7 @@ export default class WebhookController {
 
     if (
       isLeft(errorOrCreateUserResponse) ||
-      errorOrCreateUserResponse.value.status !== 200
+      errorOrCreateUserResponse.value.status !== 201
     ) {
       log.error(
         "Cannot post user to json api: %s",

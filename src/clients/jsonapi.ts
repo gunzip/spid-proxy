@@ -2,9 +2,13 @@ import * as t from "io-ts";
 import {
   basicResponseDecoder,
   BasicResponseType,
+  composeResponseDecoders,
   createFetchRequestForApi,
   IGetApiRequestType,
+  ioResponseDecoder,
   IPostApiRequestType,
+  IResponseType,
+  ResponseDecoder,
   TypeofApiCall
 } from "italia-ts-commons/lib/requests";
 
@@ -65,6 +69,10 @@ type GetUserT = IGetApiRequestType<
   BasicResponseType<GetUserResponseT>
 >;
 
+export type BasicResponseTypeWith201<R> =
+  | BasicResponseType<R>
+  | IResponseType<201, R>;
+
 type CreateUserT = IPostApiRequestType<
   {
     readonly drupalUser: CreateUserRequestT;
@@ -72,8 +80,17 @@ type CreateUserT = IPostApiRequestType<
   },
   never,
   never,
-  BasicResponseType<CreateUserResponseT>
+  BasicResponseTypeWith201<CreateUserResponseT>
 >;
+
+export function basicResponseDecoderWith201<R, O = R>(
+  type: t.Type<R, O>
+): ResponseDecoder<BasicResponseTypeWith201<R>> {
+  return composeResponseDecoders(
+    basicResponseDecoder(type),
+    ioResponseDecoder(201, type)
+  );
+}
 
 const jsonApiHeaders = (jwt: string) => ({
   Accept: "application/vnd.api+json",
@@ -109,7 +126,7 @@ export function JsonapiClient(
     headers: params => jsonApiHeaders(params.jwt),
     method: "post",
     query: () => ({}),
-    response_decoder: basicResponseDecoder(CreateUserResponseT),
+    response_decoder: basicResponseDecoderWith201(CreateUserResponseT),
     url: () => `/user/user`
   };
 
