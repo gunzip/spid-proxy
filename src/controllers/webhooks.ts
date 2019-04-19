@@ -6,7 +6,7 @@ import {
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 
-import { JsonapiClient } from "../clients/jsonapi";
+import { CreateUserRequestT, JsonapiClient } from "../clients/jsonapi";
 import JwtService from "../services/jwt";
 
 import { isEmpty } from "fp-ts/lib/Array";
@@ -65,52 +65,51 @@ export default class WebhookController {
 
     const isExistingUser = !isEmpty(errorOrGetUserResponse.value.value.data);
 
-    if (!isExistingUser) {
-      log.debug("Creating new user %s", user.fiscal_code);
+    if (isExistingUser) {
+      return ResponseSuccessJson({
+        uid: errorOrGetUserResponse.value.value.data[0].attributes.drupal_internal__uid.toString()
+      });
     }
 
-    // Create Drupal user if not exists
-    const errorOrUserResponse = !isExistingUser
-      ? await this.jsonApiClient.createUser({
-          drupalUser: {
-            data: {
-              attributes: {
-                mail: user.spid_email,
-                name: user.fiscal_code
-              },
-              relationships: {
-                roles: {
-                  data: [
-                    {
-                      // TODO: remove this cast
-                      id: this.defaultRoleId as NonEmptyString,
-                      type: "user_role--user_role"
-                    }
-                  ]
-                }
-              },
-              type: "user--user"
-            }
-          },
-          jwt
-        })
-      : errorOrGetUserResponse;
+    const drupalUser: CreateUserRequestT = {
+      data: {
+        attributes: {
+          mail: user.spid_email,
+          name: user.fiscal_code,
+          status: true
+        },
+        relationships: {
+          roles: {
+            data: [
+              {
+                // TODO: remove this cast
+                id: this.defaultRoleId as NonEmptyString,
+                type: "user_role--user_role"
+              }
+            ]
+          }
+        },
+        type: "user--user"
+      }
+    };
+    log.info("Creating new user (%s)", JSON.stringify(drupalUser));
+    const errorOrCreateUserResponse = await this.jsonApiClient.createUser({
+      drupalUser,
+      jwt
+    });
 
     if (
-      isLeft(errorOrUserResponse) ||
-      errorOrUserResponse.value.status !== 200
+      isLeft(errorOrCreateUserResponse) ||
+      errorOrCreateUserResponse.value.status !== 200
     ) {
       log.error(
         "Cannot post user to json api: %s",
-        JSON.stringify(errorOrUserResponse.value)
+        JSON.stringify(errorOrCreateUserResponse)
       );
       return ResponseErrorInternal("Cannot post user to json api.");
     }
-
-    const uid = errorOrUserResponse.value.value.data[0].attributes.drupal_internal__uid.toString();
-
     return ResponseSuccessJson({
-      uid
+      uid: errorOrCreateUserResponse.value.value.data.attributes.drupal_internal__uid.toString()
     });
   }
 }

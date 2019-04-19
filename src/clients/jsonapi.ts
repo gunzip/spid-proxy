@@ -19,7 +19,8 @@ const CreateUserRequestT = t.interface({
   data: t.interface({
     attributes: t.interface({
       mail: EmailString,
-      name: FiscalCode
+      name: FiscalCode,
+      status: t.boolean
     }),
     relationships: t.interface({
       roles: t.interface({
@@ -34,20 +35,25 @@ const CreateUserRequestT = t.interface({
     type: t.literal("user--user")
   })
 });
-type CreateUserRequestT = t.TypeOf<typeof CreateUserRequestT>;
+export type CreateUserRequestT = t.TypeOf<typeof CreateUserRequestT>;
+
+const UserResponseT = t.interface({
+  attributes: t.interface({
+    drupal_internal__uid: t.number,
+    mail: EmailString,
+    name: NonEmptyString
+  })
+});
 
 const GetUserResponseT = t.interface({
-  data: t.array(
-    t.interface({
-      attributes: t.interface({
-        drupal_internal__uid: t.number,
-        mail: EmailString,
-        name: NonEmptyString
-      })
-    })
-  )
+  data: t.array(UserResponseT)
 });
 type GetUserResponseT = t.TypeOf<typeof GetUserResponseT>;
+
+const CreateUserResponseT = t.interface({
+  data: UserResponseT
+});
+type CreateUserResponseT = t.TypeOf<typeof CreateUserResponseT>;
 
 type GetUserT = IGetApiRequestType<
   {
@@ -66,7 +72,7 @@ type CreateUserT = IPostApiRequestType<
   },
   never,
   never,
-  BasicResponseType<GetUserResponseT>
+  BasicResponseType<CreateUserResponseT>
 >;
 
 const jsonApiHeaders = (jwt: string) => ({
@@ -103,7 +109,7 @@ export function JsonapiClient(
     headers: params => jsonApiHeaders(params.jwt),
     method: "post",
     query: () => ({}),
-    response_decoder: basicResponseDecoder(GetUserResponseT),
+    response_decoder: basicResponseDecoder(CreateUserResponseT),
     url: () => `/user/user`
   };
 
