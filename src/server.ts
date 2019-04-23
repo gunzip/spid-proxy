@@ -4,6 +4,7 @@
 
 import * as bodyParser from "body-parser";
 import * as express from "express";
+
 import * as helmet from "helmet";
 import * as http from "http";
 import * as https from "https";
@@ -14,6 +15,9 @@ import * as passport from "passport";
 import nodeFetch from "node-fetch";
 
 import expressEnforcesSsl = require("express-enforces-ssl");
+import proxy = require("express-http-proxy");
+
+import { isLeft } from "fp-ts/lib/Either";
 import { NodeEnvironmentEnum } from "italia-ts-commons/lib/environment";
 import { toExpressHandler } from "italia-ts-commons/lib/express";
 import { createFetchRequestForApi } from "italia-ts-commons/lib/requests";
@@ -51,6 +55,7 @@ import RedisSessionStorage from "./services/redis_session_storage";
 import TokenService from "./services/token";
 import bearerTokenStrategy from "./strategies/bearer_token";
 import makeSpidStrategy from "./strategies/spid_strategy";
+import { extractUserFromRequest } from "./types/user";
 import { log } from "./utils/logger";
 import { createSimpleRedisClient, DEFAULT_REDIS_PORT } from "./utils/redis";
 import { withSpidAuth } from "./utils/spid_auth";
@@ -242,6 +247,29 @@ app.get("/info", (_, res) => {
 // @see
 // https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#define-a-liveness-http-request
 app.get("/ping", (_, res) => res.status(200).send("ok"));
+
+// Setup proxy
+app.use(
+  "/proxy",
+  passport.authenticate("bearer"),
+  proxy(JSONAPI_BASE_URL, {
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      const errorOrUser = extractUserFromRequest(srcReq);
+      if (isLeft(errorOrUser)) {
+        return proxyReqOpts;
+      }
+      const user = errorOrUser.value;
+      if (!user.metadata || !user.metadata.uid) {
+        return proxyReqOpts;
+      }
+      const jwt = jwtService.getJwtForUid(parseInt(user.metadata.uid, 10));
+      return {
+        ...proxyReqOpts,
+        headers: { ...proxyReqOpts.headers, Authorization: "Bearer " + jwt }
+      };
+    }
+  })
+);
 
 //
 //  Start HTTP server

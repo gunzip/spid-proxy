@@ -28,7 +28,7 @@ spec:
         app: backend
     spec:
       containers:
-      - image: docker.io/gunzip/spid-proxy:0.0.5
+      - image: docker.io/gunzip/spid-proxy:0.0.7
         name: backend
         ports:
         - name: http-port

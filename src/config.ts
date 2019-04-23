@@ -62,7 +62,7 @@ export const SPID_TESTENV_URL =
 
 // Redirection urls
 export const clientProfileRedirectionUrl =
-  process.env.CLIENT_REDIRECTION_URL || "/profile.html?token={token}";
+  process.env.CLIENT_REDIRECTION_URL || "/profile.html#token={token}";
 
 // tslint:disable-next-line: no-commented-code
 // if (!clientProfileRedirectionUrl.includes("{token}")) {
