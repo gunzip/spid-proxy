@@ -159,7 +159,11 @@ const loggerFormat =
 app.use(morgan(loggerFormat));
 
 // Parse the incoming request body. This is needed by Passport spid strategy.
-app.use(bodyParser.json());
+app.use(
+  bodyParser.json({
+    type: ["application/json", "application/vnd.api+json"]
+  })
+);
 
 // Parse an urlencoded body.
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -251,7 +255,7 @@ app.get("/ping", (_, res) => res.status(200).send("ok"));
 // Setup proxy
 app.use(
   "/proxy",
-  passport.authenticate("bearer"),
+  bearerTokenAuth,
   proxy(JSONAPI_BASE_URL, {
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
       const errorOrUser = extractUserFromRequest(srcReq);
